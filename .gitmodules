@@ -1,0 +1,9 @@
+[submodule "CV32E40X/cv32e40x_f_zhf"]
+	path = CV32E40X/cv32e40x_f_zhf
+	url = https://github.com/ParkerJones567/cv32e40x_f_zhf.git
+[submodule "Vicuna/vicuna_zve32f_zvhf"]
+	path = Vicuna/vicuna_zve32f_zvhf
+	url = https://github.com/ParkerJones567/vicuna_zve32f_zvhf.git
+[submodule "CV32E40X/core-v-verif"]
+	path = CV32E40X/core-v-verif
+	url = https://github.com/openhwgroup/core-v-verif.git
