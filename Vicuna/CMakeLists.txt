@@ -1,7 +1,9 @@
 ####
 # Include file with macros for adding tests
 ####
-include(${CMAKE_CURRENT_SOURCE_DIR}/../CMake/add_Vicuna_test.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../CMake/add_test.cmake)
+
+
 ####
 #Add bsp library for Vicuna
 ####
@@ -15,7 +17,7 @@ target_sources(bsp_Vicuna PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/crt0.S  
 )
 
-#Set Linker
+#Set Linker for Vicuna Programs
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lld_link.ld")
 
@@ -27,53 +29,55 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_
 
 
 #hello-world test
-add_executable(test-v)
+#add_executable(test-v)
 
 #Test sources
-target_include_directories(test-v PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/docs/code
-)
+#target_include_directories(test-v PRIVATE
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/docs/code
+#)
 
-target_sources(test-v PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/docs/code/test.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/runtime.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/runtime.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/uart.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/uart.h
-)
+#target_sources(test-v PRIVATE
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/docs/code/test.c
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/runtime.c
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/runtime.h
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/uart.c
+#  ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lib/uart.h
+#)
 
 
-target_link_options(test-v PRIVATE "-nostartfiles")
-target_link_options(test-v PRIVATE "-nostdlib")
+#target_link_options(test-v PRIVATE "-nostartfiles")
+#target_link_options(test-v PRIVATE "-nostdlib")
 
 #Link BSP
-target_link_libraries(test-v PRIVATE bsp_Vicuna)
+#target_link_libraries(test-v PRIVATE bsp_Vicuna)
 
-add_custom_command(TARGET test-v
-                   POST_BUILD
-                   COMMAND ${RISCV_LLVM_PREFIX}/llvm-objcopy -O binary test-v.elf test-v.bin       #Needs to be parameterized in case GCC is used (just use objcopy variable?)
-                   COMMAND srec_cat test-v.bin -binary -offset 0x0000 -byte-swap 4 -o test-v.vmem -vmem
-                   COMMAND rm -f prog_test-v.txt
-                   COMMAND echo ${CMAKE_CURRENT_SOURCE_DIR}/../build_programs/build/Vicuna/test-v.vmem >> prog_test-v.txt)
+#add_custom_command(TARGET test-v
+#                   POST_BUILD
+#                   COMMAND ${RISCV_LLVM_PREFIX}/llvm-objcopy -O binary test-v.elf test-v.bin       #Needs to be parameterized in case GCC is used (just use objcopy variable?)
+#                   COMMAND srec_cat test-v.bin -binary -offset 0x0000 -byte-swap 4 -o test-v.vmem -vmem
+#                   COMMAND rm -f prog_test-v.txt
+#                   COMMAND echo ${CMAKE_CURRENT_SOURCE_DIR}/../build_programs/build/Vicuna/test-v.vmem >> prog_test-v.txt)
 	               
 
 #Add Test
-add_test(NAME test-v
-COMMAND .${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build/verilated_model ${CMAKE_CURRENT_SOURCE_DIR}/../build_programs/build/Vicuna/prog_test-v.txt 32 262144 1 1024
-WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
+#add_test(NAME test-v
+#COMMAND .${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build/verilated_model ${CMAKE_CURRENT_SOURCE_DIR}/../build_programs/build/Vicuna/prog_test-v.txt 32 262144 1 1024
+#WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
 
 
-####Add all unit tests in vicuna/test directory####
+#### Add all unit tests in vicuna/test directory if Zve32x is enabled ####
 #### CURRENTLY NOT CONFIRMING CORRECT OUTPUT FOR UNIT TESTS DUE TO ISSUE GENERATING THE DUMP FILES ####
-####Each test is a single, separate assembly file####
-file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/*/*.S")
-foreach(file ${files})
-  #Get name of the test
-  string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/" "" TEST_PATH ${file})
-  add_vicuna_unit_test(${TEST_PATH})
-endforeach()
-
+#### Each test is a single, separate assembly file ####
+if(USE_ZVE32X)
+    file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/*/*.S")
+    foreach(file ${files})
+    #Get name of the test
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/" "" TEST_PATH ${file})
+    add_vicuna_unit_test(${TEST_PATH})
+    endforeach()
+endif()
+    
 
 

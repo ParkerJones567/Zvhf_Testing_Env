@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
+set(BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
+set(VERILATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build)
 
 #####
 # Default Paths to dependencies.  If present, don't need to set these  TODO
@@ -10,8 +12,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 ##########################
 #Necessary Variables:
 #
-# RISCV_GCC_PREFIX: Path to GCC RISCV headers for desired architecture
-# RISCV_LLVM_PREFIX:  PATH TO LLVM 17 bin folder
+# RV_ARCH : select the processor architecture configuration for compilation
 # FEATURES:
 # 
 #
@@ -22,8 +23,33 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #####
 # Select RISCV_ARCH and RISCV_ABI based on selected features
 #####
-set(RISCV_ARCH rv32imv) #Parametrize this in the future
-set(RISCV_ABI ilp32)    #Depends on RISCV_ARCH selected
+
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imv, rv32imf
+set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
+
+#These control which unit tests are compiled
+option(USE_F "Use the RISC-V F Extension" OFF)
+option(USE_ZVE32X "Use the RISC-V Embedded V Extension" OFF)
+
+if(${RISCV_ARCH} STREQUAL "rv32im") 
+    set(RISCV_ABI ilp32)   
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imf")
+    set(RISCV_ABI ilp32f)  
+    set(USE_F ON)
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x")
+    set(RISCV_ABI ilp32) 
+    set(USE_ZVE32X ON)
+
+else()
+    message(FATAL_ERROR "Unsupported RISCV_ARCH selected")
+    
+endif()
+
+
+
+
 set(RISCV_CMODEL "medany" CACHE STRING "mcmodel argument to the compiler")
 
 
@@ -78,18 +104,22 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 set(CMAKE_EXECUTABLE_SUFFIX_C .elf)
 set(CMAKE_EXECUTABLE_SUFFIX_CXX .elf)
 set(CMAKE_EXECUTABLE_SUFFIX_ASM .elf) 
-set(CMAKE_EXECUTABLE_SUFFIX ".elf") #For some reason setting this
+set(CMAKE_EXECUTABLE_SUFFIX ".elf") #For some reason setting this works for ASM files but SUFFIX_ASM doesnt
 
 
 project(Zvhf_Software_Env LANGUAGES C CXX ASM DESCRIPTION "Compilation and Test Environment for Verification Tests and Benchmarks")
 include(CTest)
 
 ########
-#Select Applications
+#Add Program Subdirectories
 ########
 
-#Vicuna Top level Directory
+#Vicuna Top level Directory.  Contains BSP and Vicuna unit tests for Zve32x
 add_subdirectory(../Vicuna Vicuna)
+
+
+#Custom Tests Directory.  Contains unit tests for F
+add_subdirectory(../Tests Tests)
 
 
 
