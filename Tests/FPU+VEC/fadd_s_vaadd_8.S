@@ -7,16 +7,26 @@
     .global main
 main:
     la              a0, vdata_start
-    flw             f0, 0(a0)
-    
-    flw             f1, 0(a0)
-    
-    flw             f2, 0(a0)
-    
-    fmadd.s         f31, f0, f1, f2
 
-    fsw             f31, 0(a0)
 
+
+    flw             f25, 16(a0)
+    flw             f27, 16(a0)
+
+    li              t0, 16
+    vsetvli         t0, t0, e8,m1,tu,mu
+    li              t0, 1
+    vle8.v          v0, (a0)
+
+    fadd.s          f29, f27, f25, rtz 
+    vaadd.vx        v0, v0, t0          
+   
+    vse8.v          v0, (a0)
+
+
+    fsw             f29, 16(a0)
+    
+   
     la              a0, vdata_start
     la              a1, vdata_end
     j               spill_cache
@@ -27,11 +37,11 @@ main:
     .global vdata_start
     .global vdata_end
 vdata_start:
-    .word           0x3ddf374d
+    .word           0x323b3f47
     .word           0x47434b3a
     .word           0x302f2e32
     .word           0xe8404a51
-    .word           0x3f44383b
+    .word           0x323b3f47
     .word           0x37424d54
     .word           0x5e4b5049
     .word           0x4c4c4c4a
@@ -65,11 +75,11 @@ vdata_end:
     .global vref_start
     .global vref_end
 vref_start:
-    .word           0x3df78b7a
-    .word           0x47434b3a
-    .word           0x302f2e32
-    .word           0xe8404a51
-    .word           0x3f44383b
+    .word           0x1a1e2024
+    .word           0x2422261e
+    .word           0x1918181a
+    .word           0xf5212629
+    .word           0x32bb3f47
     .word           0x37424d54
     .word           0x5e4b5049
     .word           0x4c4c4c4a

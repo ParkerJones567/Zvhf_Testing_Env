@@ -1,0 +1,37 @@
+# Ignore all
+*
+
+# Unignore all files with extensions
+!*.*
+
+# Unignore all directories
+!*/
+
+# Unignore makefiles
+!Makefile
+
+# Ignore all files with extensions that could be binary files
+*.o
+*.elf
+*.bin
+*.bit
+*.mcs
+*.vmem
+
+# Ignore log files and other temporary files
+*.log
+*.txt
+*.csv
+*.vcd
+*.fst
+*.fst.hier
+*.gtkw
+
+#Ignore build directories
+/build_verilated/build/
+/build_programs/build/
+
+#Ignore everything in the Toolchain Directory
+/Toolchain/verilator/
+/Toolchain/llvm/
+/Toolchain/GCC/

@@ -24,7 +24,7 @@ set(VERILATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build)
 # Select RISCV_ARCH and RISCV_ABI based on selected features
 #####
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imv, rv32imf
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
 #These control which unit tests are compiled
@@ -41,6 +41,11 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imf")
 elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x")
     set(RISCV_ABI ilp32) 
     set(USE_ZVE32X ON)
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x")
+    set(RISCV_ABI ilp32f) 
+    set(USE_ZVE32X ON)
+    set(USE_F ON)
 
 else()
     message(FATAL_ERROR "Unsupported RISCV_ARCH selected")

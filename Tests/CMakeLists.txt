@@ -14,7 +14,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_
 
 
 ####Add all unit tests for F Extension####
-#### CURRENTLY NOT CONFIRMING CORRECT OUTPUT FOR UNIT TESTS DUE TO ISSUE GENERATING THE DUMP FILES ####
 ####Each test is a single, separate assembly file####
 if(USE_F)
     file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/FPU/*.S")
@@ -25,5 +24,16 @@ if(USE_F)
     endforeach()
 endif()
 
+####Add all unit tests for F And Zve32x Extensions together####
+if(USE_F)
+    if(USE_ZVE32X)
+        file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/FPU+VEC/*.S")
+        foreach(file ${files})
+          #Get name of the test
+          string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+          add_unit_test(${TEST_PATH})
+        endforeach()
+    endif()
+endif()
 
 

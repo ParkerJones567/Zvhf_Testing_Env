@@ -31,7 +31,7 @@ option(TRACE "Enable VCD trace outputs" OFF)
 # Configuration Selection
 ##############
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
 
@@ -50,6 +50,10 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x") #Build CV32E40X with Vicuna on the
     set(ARCH_XIF_FLAG -DXIF_ON ) 
     set(ARCH_FPU_FLAG  )
     set(ARCH_VIC_FLAG -DVICUNA_ON )  
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x") #Build CV32E40X with Vicuna and FPU on the Xif interface
+    set(ARCH_XIF_FLAG -DXIF_ON ) 
+    set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
+    set(ARCH_VIC_FLAG -DVICUNA_ON )
 
 else()
     message(FATAL_ERROR "Unsupported RISCV_ARCH selected")

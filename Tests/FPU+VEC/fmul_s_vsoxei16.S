@@ -7,15 +7,31 @@
     .global main
 main:
     la              a0, vdata_start
-    flw             f0, 0(a0)
     
-    flw             f1, 0(a0)
+    flw             f0, 16(a0)
+    flw             f1, 16(a0)
     
-    flw             f2, 0(a0)
-    
-    fmadd.s         f31, f0, f1, f2
+    li              t0, 8
+    vsetvli         t0, t0, e16,m1,tu,mu
 
-    fsw             f31, 0(a0)
+    li              t0, 0xb5
+    vmv.v.x         v0, t0
+
+
+    fmul.s          f0, f0, f1
+    fsw             f0, 16(a0)
+
+    
+    vle16.v         v8, (a0)
+    vsoxei16.v      v8, (a0), v8
+
+    li              t0, 7
+    vsetvli         t0, t0, e16,m1,tu,mu
+
+    addi            a0, a0, 64
+
+    vsoxei16.v      v8, (a0), v8, v0.t
+
 
     la              a0, vdata_start
     la              a1, vdata_end
@@ -27,11 +43,11 @@ main:
     .global vdata_start
     .global vdata_end
 vdata_start:
-    .word           0x3ddf374d
-    .word           0x47434b3a
-    .word           0x302f2e32
-    .word           0xe8404a51
-    .word           0x3f44383b
+    .word           0x00050007
+    .word           0x00030002
+    .word           0x00040000
+    .word           0x00060001
+    .word           0x323b3f47
     .word           0x37424d54
     .word           0x5e4b5049
     .word           0x4c4c4c4a
@@ -65,11 +81,11 @@ vdata_end:
     .global vref_start
     .global vref_end
 vref_start:
-    .word           0x3df78b7a
-    .word           0x47434b3a
-    .word           0x302f2e32
-    .word           0xe8404a51
-    .word           0x3f44383b
+    .word           0x00010000
+    .word           0x00030002
+    .word           0x00050004
+    .word           0x00070006
+    .word           0x2508f581
     .word           0x37424d54
     .word           0x5e4b5049
     .word           0x4c4c4c4a
@@ -81,10 +97,10 @@ vref_start:
     .word           0x3a3e3738
     .word           0x312f2e2f
     .word           0x3d433f45
-    .word           0x46424949
-    .word           0x494a4d51
-    .word           0x49413c38
-    .word           0x3e514143
+    .word           0x46420000
+    .word           0x494a0002
+    .word           0x49410004
+    .word           0x00074143
     .word           0x47525353
     .word           0x514e5052
     .word           0x525a5b58
@@ -97,4 +113,5 @@ vref_start:
     .word           0x454c4342
     .word           0x40504a3f
     .word           0x4448535a
+
 vref_end:
