@@ -68,7 +68,7 @@ set(CMAKE_SYSTEM_PROCESSOR ${RISCV_ARCH})
 set(CMAKE_SYSTEM_NAME Generic)
 
 #TODO: Parametrize selection of toolchain file
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/llvm_17_toolchain.cmake")
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/llvm_18_toolchain.cmake")
 
 #set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/GCC_toolchain.cmake")
 
