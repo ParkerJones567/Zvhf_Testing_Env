@@ -35,3 +35,6 @@
 /Toolchain/verilator/
 /Toolchain/llvm/
 /Toolchain/GCC/
+
+#Ignore Spike source directory
+/Spike/riscv-isa-sim/

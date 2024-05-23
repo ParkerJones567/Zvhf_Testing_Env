@@ -17,10 +17,6 @@ target_sources(bsp_Vicuna PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/crt0.S  
 )
 
-#Set Linker for Vicuna Programs
-
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lld_link.ld")
-
 
 ####
 #Add Validation Tests (TODO: Ones currently in Vicuna repo use the old Vector Intrinsics, update them and add a macro to easily add them)
@@ -68,15 +64,37 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_
 
 
 #### Add all unit tests in vicuna/test directory if Zve32x is enabled ####
-#### CURRENTLY NOT CONFIRMING CORRECT OUTPUT FOR UNIT TESTS DUE TO ISSUE GENERATING THE DUMP FILES ####
 #### Each test is a single, separate assembly file ####
+
+# Path to linker scripts for Vicuna and Spike Tests
+set(CMAKE_EXE_LINKER_FLAGS_VICUNA "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/sw/lld_link.ld")
+set(CMAKE_EXE_LINKER_FLAGS_SPIKE "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/../Spike/sw/link.ld")
+
+
 if(USE_ZVE32X)
+
     file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/*/*.S")
     foreach(file ${files})
-    #Get name of the test
-    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/" "" TEST_PATH ${file})
-    add_vicuna_unit_test(${TEST_PATH})
+        #set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_VICUNA})
+        #Get name of the test
+        string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/" "" TEST_PATH ${file})
+        add_unit_test(${TEST_PATH} "${VICUNA_SOURCE_TOP}/test/" "${BUILD_DIR}/Vicuna/")
     endforeach()
+    
+    if(SPIKE)
+        
+        file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/*/*.S")
+        foreach(file ${files})
+            #set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_SPIKE})
+            #Get name of the test
+            string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/vicuna_zve32f_zvhf/test/" "" TEST_PATH ${file})
+            add_unit_test_spike(${TEST_PATH} "${VICUNA_SOURCE_TOP}/test/" "${BUILD_DIR}/Vicuna/")
+        endforeach()
+    
+    
+    endif()
+    
+    
 endif()
     
 

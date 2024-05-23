@@ -1,33 +1,40 @@
 cmake_minimum_required(VERSION 3.10)
 message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
+##########################
+#
+# Configuration variables:
+# - RV_ARCH : select the processor architecture configuration for compilation
+#
+# FEATURES:
+# - SPIKE : enable reference checking with Spike. (Some tests cause issues, believed to be bugs with Spike)
+#
+#
+##########################
+
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
+set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
+
+option(Spike "Run with Spike" OFF)
+
+
+#####
+# Default Paths to Subdirectories
+#####
+
 set(BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(VERILATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build)
-
-#####
-# Default Paths to dependencies.  If present, don't need to set these  TODO
-#####
-
-
-##########################
-#Necessary Variables:
-#
-# RV_ARCH : select the processor architecture configuration for compilation
-# FEATURES:
-# 
-#
-#
-##########################
+set(VICUNA_SOURCE_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Vicuna/vicuna_zve32f_zvhf)
+set(CUSTOM_TESTS_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Tests)
+set(CMAKE_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../CMake)
+set(SPIKE_SOURCES_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Spike)
 
 
 #####
 # Select RISCV_ARCH and RISCV_ABI based on selected features
 #####
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
-set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
-
-#These control which unit tests are compiled
+#These control which unit tests are compiled based on selected RISCV_ARCH
 option(USE_F "Use the RISC-V F Extension" OFF)
 option(USE_ZVE32X "Use the RISC-V Embedded V Extension" OFF)
 
@@ -71,9 +78,6 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/llvm_18_toolchain.cmake")
 
 #set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/GCC_toolchain.cmake")
-
-
-
 
 ####
 # Set build mode, Release by default
@@ -122,9 +126,11 @@ include(CTest)
 #Vicuna Top level Directory.  Contains BSP and Vicuna unit tests for Zve32x
 add_subdirectory(../Vicuna Vicuna)
 
-
-#Custom Tests Directory.  Contains unit tests for F
+#Custom Tests Directory.  Contains unit tests for F and F+V
 add_subdirectory(../Tests Tests)
+
+#Spike Directory.  Contains Library to use when running with Spike for reference outputs
+add_subdirectory(../Spike Spike)
 
 
 
