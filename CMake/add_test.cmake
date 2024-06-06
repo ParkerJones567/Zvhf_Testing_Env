@@ -40,16 +40,24 @@ macro(add_unit_test TEST_PATH_NAME TEST_SOURCE_PATH TEST_BUILD_PATH)
                        COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vref_end | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
                        COMMAND echo -n "${TEST_BUILD_PATH}/${TEST_NAME}_result.txt " >> prog_${TEST_NAME}.txt
                        COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vdata_start | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
-                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vdata_end | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt)
+                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vdata_end | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
+                       COMMAND ${RISCV_LLVM_PREFIX}/llvm-objdump -D ${TEST_NAME}.elf > ${TEST_NAME}_dump.txt)
+                       
+     
+    #If trace option is selected, provide the paths for the .csv and .vcd trace files.  Due to argument parsing in verilator_main.cpp, both must be provided                
+    if(TRACE)
+        set(MEM_TRACE_ARGS "${BUILD_DIR}/Testing/last_test_mem.csv")
+        set(VCD_TRACE_ARGS "${BUILD_DIR}/Testing/last_test_sig.vcd")
+    else()
+        set(MEM_TRACE_ARGS "")
+        set(VCD_TRACE_ARGS "")
+    endif()
 	              
 
     #Add Test
-    #Write permissions to create csv log not given to CTest.  Could potentially fix this.  For now, modified verilator_main.cpp to not require path and print out total cycles spent.
     add_test(NAME ${TEST_NAME}
-    #COMMAND .${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build/verilated_model ${CMAKE_CURRENT_SOURCE_DIR}/../build_programs/build/Vicuna/prog_${TEST_NAME}.txt 32 262144 1 1024
-    COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DVERILATED_DIR=${VERILATED_DIR} -P ${CMAKE_TOP}/run_test.cmake
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..
-    )
+             COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DVERILATED_DIR=${VERILATED_DIR} -DMEM_TRACE_ARGS=${MEM_TRACE_ARGS} -DVCD_TRACE_ARGS=${VCD_TRACE_ARGS} -P ${CMAKE_TOP}/run_test.cmake
+             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")
 
@@ -96,8 +104,8 @@ macro(add_unit_test_spike TEST_PATH_NAME TEST_SOURCE_PATH TEST_BUILD_PATH)
                       
     #Add Test ##NEED TO PASS THE PROPER RISCV_ARCH.  for spike must translate zve32x to v.  Should also pass vlen/elen?  Vlen shouldnt change outputs, so for my case this doesnt matter?
     add_test(NAME ${TEST_NAME}_Spike
-    COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DSPIKE_DIR=${SPIKE_SOURCES_TOP} -P ${CMAKE_TOP}/run_spike_comparison.cmake
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..
+             COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DSPIKE_DIR=${SPIKE_SOURCES_TOP} -P ${CMAKE_TOP}/run_spike_comparison.cmake
+             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..
     )
 
     message(STATUS "Successfully added ${TEST_NAME}_Spike")

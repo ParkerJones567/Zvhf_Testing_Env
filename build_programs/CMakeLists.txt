@@ -8,6 +8,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #
 # FEATURES:
 # - SPIKE : enable reference checking with Spike. (Some tests cause issues, believed to be bugs with Spike)
+# - TRACE : enables .csv memory trace and .vcd signal trace output for unit tests.  Due to large file sizes, only trace of last test run will be kept.  Will be located in /build/Testing
 #
 #
 ##########################
@@ -15,7 +16,8 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
-option(Spike "Run with Spike" OFF)
+option(SPIKE "Run with Spike" OFF)
+option(TRACE "Enable trace outputs" OFF)
 
 
 #####

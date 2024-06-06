@@ -3,13 +3,18 @@
 #For reuse, provide the direct path to the files for SPIKE_DIR and BUILD_DIR
 execute_process(COMMAND ${SPIKE_DIR}/spike --isa=rv32imfv_zicntr_zihpm --varch=vlen:1024,elen:64 +signature=${BUILD_DIR}/${TEST_NAME}_Spike_reference.txt --signature=${BUILD_DIR}/${TEST_NAME}_Spike_reference.txt +signature-granularity=4 --signature-granularity=4 ${BUILD_DIR}/${TEST_NAME}_Spike.elf  
                 RESULT_VARIABLE RETURN_SIM)
-execute_process(COMMAND diff ${BUILD_DIR}/${TEST_NAME}_result.txt ${BUILD_DIR}/${TEST_NAME}_Spike_reference.txt 
+execute_process(COMMAND diff ${BUILD_DIR}/${TEST_NAME}_Spike_reference.txt ${BUILD_DIR}/${TEST_NAME}_result.txt
                 RESULT_VARIABLE RETURN_DIFF)
+execute_process(COMMAND diff ${BUILD_DIR}/${TEST_NAME}_Spike_reference.txt ${BUILD_DIR}/${TEST_NAME}_reference.txt
+                RESULT_VARIABLE RETURN_REF)
                 
 if(RETURN_SIM)
-        message(FATAL_ERROR "SIMULATION ERROR")
+        message(FATAL_ERROR "SPIKE SIMULATION ERROR")
 else()
+        if(RETURN_REF)
+                message(FATAL_ERROR "SPIKE OUTPUT MISMATCH WITH EXPECTED DATA REFERENCE")
+        endif()
         if(RETURN_DIFF)
-                message(FATAL_ERROR "OUTPUT ERROR")
+                message(FATAL_ERROR "SPIKE OUTPUT MISMATCH WITH VERILATOR MODEL")
         endif()
 endif()
