@@ -91,9 +91,9 @@ vdata_start:
     
     .float           inf
     
-    .word            0x7f800001 #NaN
+    .word            0x7f800001 #sNaN
     
-    .word            0x7fc00000 #NaN
+    .word            0x7fc00000 #qNaN
 vdata_end:
 
 
