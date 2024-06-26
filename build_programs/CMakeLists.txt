@@ -38,6 +38,7 @@ set(SPIKE_SOURCES_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Spike)
 
 #These control which unit tests are compiled based on selected RISCV_ARCH
 option(USE_F "Use the RISC-V F Extension" OFF)
+option(USE_ZFH "Use the RISC-V ZFH Extension" OFF)
 option(USE_ZVE32X "Use the RISC-V Embedded V Extension" OFF)
 
 if(${RISCV_ARCH} STREQUAL "rv32im") 
@@ -47,6 +48,11 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imf")
     set(RISCV_ABI ilp32f)  
     set(USE_F ON)
     
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzfh")
+    set(RISCV_ABI ilp32f)  
+    set(USE_F ON)
+    set(USE_ZFH ON)
+    
 elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x")
     set(RISCV_ABI ilp32) 
     set(USE_ZVE32X ON)
@@ -55,6 +61,7 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_F ON)
+    
 
 else()
     message(FATAL_ERROR "Unsupported RISCV_ARCH selected")

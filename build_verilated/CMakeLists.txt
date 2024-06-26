@@ -16,7 +16,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 ####################
 
 project(Verilated-Builds LANGUAGES C CXX DESCRIPTION "Environment for Verilating Models")
-find_package(verilator HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../Toolchain/verilator) #TODO-Point to correct path of verilator (use source location, don't install?  does strange stuff with share directory)
+find_package(verilator HINTS ${CMAKE_CURRENT_SOURCE_DIR}/../Toolchain/verilator)
 
 # See whats going in CMake while getting the build process up and running
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -31,7 +31,7 @@ option(TRACE "Enable VCD trace outputs" OFF)
 # Configuration Selection
 ##############
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzhf, rv32imfzve32x
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
 
@@ -39,20 +39,31 @@ set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 if(${RISCV_ARCH} STREQUAL "rv32im") #Build only CV32E40X
     set(ARCH_XIF_FLAG  ) 
     set(ARCH_FPU_FLAG  )
+    set(ARCH_ZFH_FLAG  )
     set(ARCH_VIC_FLAG  )  
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imf") #Build CV32E40X with FPU on the Xif interface
     set(ARCH_XIF_FLAG -DXIF_ON ) 
     set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
-    set(ARCH_VIC_FLAG  )  
+    set(ARCH_ZFH_FLAG  )
+    set(ARCH_VIC_FLAG  ) 
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzfh") #Build CV32E40X with FPU on the Xif interface with half-float support
+    set(ARCH_XIF_FLAG -DXIF_ON ) 
+    set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
+    set(ARCH_ZFH_FLAG -DZFH_ON )
+    set(ARCH_VIC_FLAG  )   
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x") #Build CV32E40X with Vicuna on the Xif interface
     set(ARCH_XIF_FLAG -DXIF_ON ) 
     set(ARCH_FPU_FLAG  )
-    set(ARCH_VIC_FLAG -DVICUNA_ON )  
+    set(ARCH_ZFH_FLAG  )
+    set(ARCH_VIC_FLAG -DVICUNA_ON ) 
+     
 elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x") #Build CV32E40X with Vicuna and FPU on the Xif interface
     set(ARCH_XIF_FLAG -DXIF_ON ) 
     set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
+    set(ARCH_ZFH_FLAG  )
     set(ARCH_VIC_FLAG -DVICUNA_ON )
 
 else()
@@ -133,6 +144,7 @@ set(FPNEW_INCLUDE   ${DESIGN_RTL_DIR_FPNEW}                                     
                    
 set(FPU_SS_SOURCE   ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_pkg.sv                              #FPU_SS Sources
                     ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_prd_f_pkg.sv
+                    ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_prd_f_zfh_pkg.sv
                     ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_prd_zfinx_pkg.sv
                     ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_instr_pkg.sv
                     ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss.sv )
@@ -185,6 +197,7 @@ verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${VICUNA_SOURC
                               -DMAIN_CORE_CV32E40X #Flag to select CV32E40X as scalar core
                               ${ARCH_XIF_FLAG} #Each flag must be in a separate variable or they don't get passed correctly
                               ${ARCH_FPU_FLAG} 
+                              ${ARCH_ZFH_FLAG} 
                               ${ARCH_VIC_FLAG}                    
                               -CFLAGS "-std=gnu++11 -O2 -DSIM_ABORT_CYCLES=10000")  #Not sure if Sim_abort_cycles is necessary, possibly misnamed from ABORT CYCLES.  This is from the old vicuna makefile
 

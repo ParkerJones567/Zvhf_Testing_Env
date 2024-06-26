@@ -34,6 +34,7 @@
 #Will use download helper eventually.  For now, building from source.  Takes a very long time
 ./build_gcc.sh rv32im ilp32
 ./build_gcc.sh rv32imf ilp32f
+./build_gcc.sh rv32imfzfh ilp32f
 ./build_gcc.sh rv32imzve32x ilp32
 ./build_gcc.sh rv32imfzve32x ilp32f
 
