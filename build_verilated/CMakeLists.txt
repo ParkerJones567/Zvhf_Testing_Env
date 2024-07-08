@@ -65,6 +65,12 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x") #Build CV32E40X with Vicuna and F
     set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
     set(ARCH_ZFH_FLAG  )
     set(ARCH_VIC_FLAG -DVICUNA_ON )
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzfhzve32x") #Build CV32E40X with Vicuna and FPU on the Xif interface
+    set(ARCH_XIF_FLAG -DXIF_ON ) 
+    set(ARCH_FPU_FLAG -DSCALAR_FPU_ON )
+    set(ARCH_ZFH_FLAG -DZFH_ON )
+    set(ARCH_VIC_FLAG -DVICUNA_ON )
 
 else()
     message(FATAL_ERROR "Unsupported RISCV_ARCH selected")
@@ -76,7 +82,7 @@ endif()
 ####
 
 #These Parameters need to be set on the command line.  
-set(VPROC_CONFIG dual)
+set(VPROC_CONFIG dual-div)
 set(VREG_W 128)  
 set(VMEM_W 32)
 
@@ -179,8 +185,8 @@ add_definitions(-DABORT_CYCLES=10000)
 add_executable(verilated_model ${VICUNA_SIM_DIR}verilator_main.cpp)
 
 
-verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${VICUNA_SOURCE} ${CV32E40X_SOURCE}
-               INCLUDE_DIRS  ${FPNEW_INCLUDE} ${FPU_SS_INCLUDE} ${VICUNA_INCLUDE} ${CV32E40X_INCLUDE}
+verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${CV32E40X_SOURCE} ${VICUNA_SOURCE} 
+               INCLUDE_DIRS  ${FPNEW_INCLUDE} ${FPU_SS_INCLUDE} ${CV32E40X_INCLUDE} ${VICUNA_INCLUDE} 
                TOP_MODULE vproc_top 
                PREFIX Vvproc_top
                ${TRACE}                                    
