@@ -104,6 +104,8 @@ while (val < len(sys.argv)):
             output = '.word 0x'+ data_hex_b4 + data_hex_b3 + data_hex_b2 + data_hex_b1 + ' # '+sys.argv[val+3] + ' | '+sys.argv[val+2] + ' | ' + sys.argv[val+1] + ' | ' + sys.argv[val]
             print (output)
             val=val+4
+            
+            
  
                  
     else:

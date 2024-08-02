@@ -37,6 +37,8 @@
 ./build_gcc.sh rv32imfzfh ilp32f
 ./build_gcc.sh rv32imzve32x ilp32
 ./build_gcc.sh rv32imfzve32x ilp32f
+./build_gcc.sh rv32imfzve32f ilp32f
+./build_gcc.sh rv32imfzfhzve32fzvfh ilp32f
 
 
 ######

@@ -13,7 +13,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #
 ##########################
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x
+#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x, rv32imfzve32f
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
 option(SPIKE "Run with Spike" OFF)
@@ -40,6 +40,8 @@ set(SPIKE_SOURCES_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Spike)
 option(USE_F "Use the RISC-V F Extension" OFF)
 option(USE_ZFH "Use the RISC-V ZFH Extension" OFF)
 option(USE_ZVE32X "Use the RISC-V Embedded V Extension" OFF)
+option(USE_ZVE32F "Use the RISC-V Embedded V Float Extension" OFF)
+option(USE_ZVHF "Use the RISC-V V Half Float Extension" OFF)
 
 if(${RISCV_ARCH} STREQUAL "rv32im") 
     set(RISCV_ABI ilp32)   
@@ -61,6 +63,19 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_F ON)
+    
+elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32f")
+    set(RISCV_ABI ilp32f) 
+    set(USE_ZVE32X ON)
+    set(USE_ZVE32F ON)
+    set(USE_F ON)
+elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zvfh")
+    set(RISCV_ABI ilp32f) 
+    set(USE_ZVE32X ON)
+    set(USE_ZVE32F ON)
+    set(USE_ZFH ON)
+    set(USE_F ON)
+    set(USE_ZVFH ON)
     
 
 else()
@@ -135,7 +150,7 @@ include(CTest)
 #Vicuna Top level Directory.  Contains BSP and Vicuna unit tests for Zve32x
 add_subdirectory(../Vicuna Vicuna)
 
-#Custom Tests Directory.  Contains unit tests for F and F+V
+#Custom Tests Directory.  Contains unit tests for F and F+V and Zve32f
 add_subdirectory(../Tests Tests)
 
 #Spike Directory.  Contains Library to use when running with Spike for reference outputs

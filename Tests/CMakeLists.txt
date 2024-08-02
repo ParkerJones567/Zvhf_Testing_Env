@@ -86,9 +86,54 @@ if(USE_F)
             endforeach() 
         endif()
     
+    endif()
+    
 endif()
 
+#### Add Zve32f unit tests ####
+
+if(USE_ZVE32F)
+        file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/ZVE32F/*.S")
+        foreach(file ${files})
+          #Get name of the test
+          string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+          add_unit_test(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests/")
+        endforeach()
     
+    
+    
+        if(SPIKE)
+            file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/ZVE32F/*.S")
+            foreach(file ${files})
+                #Get name of the test
+                string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+                add_unit_test_spike(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests/")
+            endforeach()
+         endif()
+     
+endif()
+
+#### Add Zvfh unit tests ####
+
+if(USE_ZVFH)
+        file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/ZVFH/*.S")
+        foreach(file ${files})
+          #Get name of the test
+          string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+          add_unit_test(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests/")
+        endforeach()
+    
+    
+    
+        if(SPIKE)
+            file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/ZVFH/*.S")
+            foreach(file ${files})
+                #Get name of the test
+                string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+                add_unit_test_spike(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests/")
+            endforeach()
+         endif()
+     
 endif()
 
 
