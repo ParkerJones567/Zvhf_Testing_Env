@@ -6,7 +6,7 @@ cd ../Spike
 echo "Building Spike"
 git clone https://github.com/riscv-software-src/riscv-isa-sim.git
 cd riscv-isa-sim
-export RISCV=$PWD/../../Toolchain/GCC/rv32imfzfhzve32x
+export RISCV=$PWD/../../Toolchain/GCC/rv32imf_zfh_zvfh
 export PATH=$PATH:$RISCV/bin
 echo $PATH
 mkdir build
