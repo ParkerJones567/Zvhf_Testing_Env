@@ -23,7 +23,7 @@
 #   llvm setup
 ######
 
-#./download_helper.sh ../Toolchain/llvm/ LLVM default 18.1.4 llvm  WORKS
+./download_helper.sh ../Toolchain/llvm/ LLVM default 18.1.4 llvm  WORKS
 
 
 
@@ -46,3 +46,10 @@
 ######
 
 ./build_spike.sh
+
+
+######
+#   tflm setup
+######
+
+./download_tflm.sh

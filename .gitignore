@@ -39,3 +39,13 @@
 
 #Ignore Spike source directory
 /Spike/riscv-isa-sim/
+
+#Ignore tflite-micro and built source tree files
+/Benchmarks/tflite-micro/
+/Benchmarks/tensorflow/
+/Benchmarks/third_party/
+/Benchmarks/signal/
+
+#Ignore any generated cc files from models directory
+/Benchmarks/models/*/*.cc
+

@@ -15,9 +15,15 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 
 #Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x, rv32imfzve32f
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
+set(MEM_LATENCY 1 CACHE STRING "Memory latency")
 
-option(SPIKE "Run with Spike" OFF)
-option(TRACE "Enable trace outputs" OFF)
+option(SPIKE        "Run with Spike Baremetal"  OFF)
+option(SPIKE_PK     "Run with Spike and PK"     OFF)
+option(TRACE        "Enable trace outputs"      OFF)
+option(BENCHMARKS   "Run Benchmarks"            ON)
+option(PRINT "Enable print statements"      OFF) #Turn off when caches enabled
+
+set(TOOLCHAIN LLVM CACHE STRING "GCC OR LLVM")
 
 
 #####
@@ -29,6 +35,7 @@ set(VERILATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../build_verilated/build)
 set(VICUNA_SOURCE_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Vicuna/vicuna_zve32f_zvhf)
 set(CUSTOM_TESTS_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Tests)
 set(CMAKE_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../CMake)
+set(BENCHMARKS_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Benchmarks)
 set(SPIKE_SOURCES_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Spike)
 
 
@@ -44,7 +51,7 @@ option(USE_ZVE32F "Use the RISC-V Embedded V Float Extension" OFF)
 option(USE_ZVHF "Use the RISC-V V Half Float Extension" OFF)
 
 if(${RISCV_ARCH} STREQUAL "rv32im") 
-    set(RISCV_ABI ilp32)   
+    set(RISCV_ABI ilp32)  
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imf")
     set(RISCV_ABI ilp32f)  
@@ -98,16 +105,23 @@ set(CMAKE_SYSTEM_PROCESSOR ${RISCV_ARCH})
 # The Generic system name is used for bare-metal targets (without OS) in CMake
 set(CMAKE_SYSTEM_NAME Generic)
 
-#TODO: Parametrize selection of toolchain file
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/llvm_18_toolchain.cmake")
-
-#set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/GCC_toolchain.cmake")
+#Select toolchain file
+if(${TOOLCHAIN} STREQUAL "LLVM")
+    message("USING LLVM")
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/llvm_18_toolchain.cmake")
+else()
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/GCC_toolchain.cmake")
+endif()
 
 ####
 # Set build mode, Release by default
 ####
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
+if(PRINT)
+  add_definitions(-DPRINT_OUTPUTS)
 endif()
 
 
@@ -150,11 +164,19 @@ include(CTest)
 #Vicuna Top level Directory.  Contains BSP and Vicuna unit tests for Zve32x
 add_subdirectory(../Vicuna Vicuna)
 
-#Custom Tests Directory.  Contains unit tests for F and F+V and Zve32f
-add_subdirectory(../Tests Tests)
+if(NOT BENCHMARKS) 
+    #Custom Tests Directory.  Contains unit tests for F and F+V and Zve32f
+    add_subdirectory(../Tests Tests)
+endif()
 
 #Spike Directory.  Contains Library to use when running with Spike for reference outputs
 add_subdirectory(../Spike Spike)
+
+
+#SW Directory.  Contains benchmarks
+if(BENCHMARKS) 
+    add_subdirectory(../Benchmarks Benchmarks)
+endif()
 
 
 

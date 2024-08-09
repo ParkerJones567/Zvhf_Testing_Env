@@ -4,6 +4,23 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/../CMake/add_test.cmake)
 
 
+file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/Scalar/*.S")
+    foreach(file ${files})
+      #Get name of the test
+      string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+      add_unit_test(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests")
+      
+      if(SPIKE)
+        file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/Scalar/*.S")
+        foreach(file ${files})
+        #Get name of the test
+        string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" TEST_PATH ${file})
+        add_unit_test_spike(${TEST_PATH} "${CUSTOM_TESTS_TOP}" "${BUILD_DIR}/Tests/")
+        endforeach() 
+     endif()
+endforeach()
+
+
 #### Add all unit tests for F Extension ####
 #### Each test is a single, separate assembly file ####
 if(USE_F)

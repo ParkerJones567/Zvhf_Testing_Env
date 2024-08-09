@@ -1,6 +1,6 @@
 
-set(RISCV_GCC_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../Toolchain/GCC/${RISCV_ARCH}" CACHE PATH "Install location of GCC RISC-V toolchain.")
-set(RISCV_GCC_BASENAME "riscv32-unknown-elf" CACHE STRING "Base name of the toolchain executables.")
+set(RISCV_GCC_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../Toolchain/GCC/${RISCV_ARCH}")
+set(RISCV_GCC_BASENAME "riscv32-unknown-elf")
 
 set(RISCV_LLVM_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../Toolchain/llvm/bin" CACHE PATH "Install location of LLVM RISC-V toolchain.")
 

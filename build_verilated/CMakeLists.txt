@@ -8,6 +8,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #
 # RV_ARCH : select the processor architecture configuration to verilate
 # TRACE   : If defined, enable vcd trace outputs.  WARNING: Traces can be very large (GBs)
+# TRACE_FULL   : If defined, trace outputs of ENTIRE model WARNING: Traces can be very VERY large (GBs) (requires TRACE=ON)
 #
 
 
@@ -25,14 +26,20 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-option(TRACE "Enable VCD trace outputs" OFF)
+
+#Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzhf, rv32imfzve32x, rv32imfzve32f
+set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
+
+option(TRACE "Enable minimal VCD trace outputs" OFF)
+option(TRACE_FULL "Enable FULL VCD trace outputs" OFF) #TODO: prevent this option from being cached, force user to always manually enable it
+
+
+set(CACHE NONE CACHE STRING "NONE, D-Min, D-I-Min, D, D-I")
 
 ##############
 # Configuration Selection
 ##############
 
-#Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzhf, rv32imfzve32x, rv32imfzve32f
-set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 
 
 #set the variables to include the correct modules/connections in the project
@@ -117,19 +124,40 @@ endif()
 # Vicuna configuration Variables
 ####
 
-#These Parameters need to be set on the command line.  
+if(${CACHE} STREQUAL "NONE")
+    set(ICACHE_SZ 0)
+    set(DCACHE_SZ 0)
+    set(ICACHE_LINE_W 64)
+    set(DCACHE_LINE_W 64) 
+elseif(${CACHE} STREQUAL "D-MIN")
+    set(ICACHE_SZ 0)
+    set(DCACHE_SZ 32)
+    set(ICACHE_LINE_W 64)
+    set(DCACHE_LINE_W 64) 
+elseif(${CACHE} STREQUAL "D-I-MIN")
+    set(ICACHE_SZ 32) #Minimum sizes for I and D caches Results in 2 sets with 2 64-bit lines each
+    set(DCACHE_SZ 32)
+    set(ICACHE_LINE_W 64)
+    set(DCACHE_LINE_W 64) 
+elseif(${CACHE} STREQUAL "D")
+    set(ICACHE_SZ 0)
+    set(DCACHE_SZ 4096)
+    set(ICACHE_LINE_W 64)
+    set(DCACHE_LINE_W 256) 
+elseif(${CACHE} STREQUAL "D-I")
+    set(ICACHE_SZ 1024)
+    set(DCACHE_SZ 4096)
+    set(ICACHE_LINE_W 128)
+    set(DCACHE_LINE_W 256) 
+else()
+    message(FATAL_ERROR "Unsupported Cache Configuration")
+endif()
 
-set(VREG_W 128)  
-set(VMEM_W 32)
-
+set(VREG_W 128)
+set(VMEM_W 32)  
 set(MEM_W 32)
-set(MEM_SZ 262144)      
-set(MEM_LATENCY 1)  #Needs to match value given to verilated model on the command line.  TODO: combine both verilated model and program CMAKE as subprojects and control this that way
-set(ICACHE_SZ 0)
-set(ICACHE_LINE_W 128)
-set(DCACHE_SZ 0)       
-set(DCACHE_LINE_W 512)
-
+set(MEM_SZ 4194304)      
+set(MEM_LATENCY 1)  #TODO: THIS IS UNUSED BY THE DESIGN: REMOVE
 
 
 ####
@@ -211,11 +239,17 @@ execute_process(COMMAND rm -f vproc_config.sv
 if(TRACE)
     add_definitions(-DTRACE_VCD)
     set(TRACE TRACE)
+    
+    if(TRACE_FULL)
+        set(TRACE_FLAG  ) #no --trace-depth flag defaults to entire model
+    else()
+        set(TRACE_FLAG --trace-depth 2)
+    endif()
 endif()
 
 
 #Todo: allow user to set this
-add_definitions(-DABORT_CYCLES=10000)
+#add_definitions(-DABORT_CYCLES=100000)  #Need to disable this for benchmarks, it triggers when clearing the tensor arenas
 
 #Create the verilated model 
 add_executable(verilated_model ${VICUNA_SIM_DIR}verilator_main.cpp)
@@ -234,6 +268,8 @@ verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${CV32E40X_SOU
 	                          -Wno-WIDTHCONCAT         
                               #+define+COREV_ASSERT_OFF       #Fixes UVM error with CV32E40X (Needed when not using -DVPROC_SVA)
 	                          --clk clk_i
+	                          #--trace-depth 2
+	                          ${TRACE_FLAG} 
 	                          --assert -DVPROC_SVA
                               -GMEM_W=${MEM_W} -GVMEM_W=${VMEM_W} -GICACHE_SZ=${ICACHE_SZ} -GICACHE_LINE_W=${ICACHE_LINE_W} -GDCACHE_SZ=${DCACHE_SZ} -GDCACHE_LINE_W=${DCACHE_LINE_W}
                               -DMAIN_CORE_CV32E40X #Flag to select CV32E40X as scalar core
@@ -243,5 +279,5 @@ verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${CV32E40X_SOU
                               ${ARCH_VIC_FLAG}   
                               ${ARCH_VIC_F_FLAG} 
                               ${ARCH_VIC_FH_FLAG}                   
-                              -CFLAGS "-std=gnu++11 -O2 -DSIM_ABORT_CYCLES=10000")  #Not sure if Sim_abort_cycles is necessary, possibly misnamed from ABORT CYCLES.  This is from the old vicuna makefile
+                              -CFLAGS "-std=gnu++11 -O2")
 
