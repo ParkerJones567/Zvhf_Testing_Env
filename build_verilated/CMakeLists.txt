@@ -9,7 +9,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 # RV_ARCH : select the processor architecture configuration to verilate
 # TRACE   : If defined, enable vcd trace outputs.  WARNING: Traces can be very large (GBs)
 # TRACE_FULL   : If defined, trace outputs of ENTIRE model WARNING: Traces can be very VERY large (GBs) (requires TRACE=ON)
-#
+# CACHE :   Enable a cache configuration
 
 
 #####################
@@ -122,6 +122,7 @@ endif()
 
 ####
 # Vicuna configuration Variables
+# Caches are always 2-way set associative, and require at least 2 blocks per set
 ####
 
 if(${CACHE} STREQUAL "NONE")
@@ -135,7 +136,7 @@ elseif(${CACHE} STREQUAL "D-MIN")
     set(ICACHE_LINE_W 64)
     set(DCACHE_LINE_W 64) 
 elseif(${CACHE} STREQUAL "D-I-MIN")
-    set(ICACHE_SZ 32) #Minimum sizes for I and D caches Results in 2 sets with 2 64-bit lines each
+    set(ICACHE_SZ 32) #Minimum sizes for I and D caches Results in 2 sets with 2 64-bit lines each.
     set(DCACHE_SZ 32)
     set(ICACHE_LINE_W 64)
     set(DCACHE_LINE_W 64) 
@@ -145,7 +146,7 @@ elseif(${CACHE} STREQUAL "D")
     set(ICACHE_LINE_W 64)
     set(DCACHE_LINE_W 256) 
 elseif(${CACHE} STREQUAL "D-I")
-    set(ICACHE_SZ 1024)
+    set(ICACHE_SZ 2048)
     set(DCACHE_SZ 4096)
     set(ICACHE_LINE_W 128)
     set(DCACHE_LINE_W 256) 
