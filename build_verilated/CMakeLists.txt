@@ -36,6 +36,11 @@ option(TRACE_FULL "Enable FULL VCD trace outputs" OFF) #TODO: prevent this optio
 
 set(CACHE NONE CACHE STRING "NONE, D-Min, D-I-Min, D, D-I")
 
+set(VREG_W 128 CACHE STRING "VREG_W")
+set(VMEM_W 32 CACHE STRING "VMEM_W")
+set(VLANE_W 32 CACHE STRING "VLANE_W")
+set(DCACHE_LINE_W 128 CACHE STRING "DCACHE_LINE_W") 
+
 ##############
 # Configuration Selection
 ##############
@@ -146,16 +151,15 @@ elseif(${CACHE} STREQUAL "D")
     set(ICACHE_LINE_W 64)
     set(DCACHE_LINE_W 256) 
 elseif(${CACHE} STREQUAL "D-I")
-    set(ICACHE_SZ 2048)
-    set(DCACHE_SZ 4096)
-    set(ICACHE_LINE_W 128)
-    set(DCACHE_LINE_W 256) 
+    set(ICACHE_SZ 8192)
+    set(DCACHE_SZ 8192)
+    set(ICACHE_LINE_W 256)
 else()
     message(FATAL_ERROR "Unsupported Cache Configuration")
 endif()
 
-set(VREG_W 128)
-set(VMEM_W 32)  
+#set(VREG_W 128)
+#set(VMEM_W 64)  
 set(MEM_W 32)
 set(MEM_SZ 4194304)      
 set(MEM_LATENCY 1)  #TODO: THIS IS UNUSED BY THE DESIGN: REMOVE
@@ -210,7 +214,13 @@ set(FPNEW_SOURCE    ${DESIGN_RTL_DIR_FPNEW}/fpnew_pkg.sv
 set(FPNEW_INCLUDE   ${DESIGN_RTL_DIR_FPNEW}                                             #FPNEW Include Dirs
                     ${DESIGN_RTL_DIR_FPNEW}/common_cells/include
                     ${DESIGN_RTL_DIR_FPNEW}/common_cells/src
-                    ${DESIGN_RTL_DIR_FPNEW}/fpu_div_sqrt_mvp/hdl)               
+                    ${DESIGN_RTL_DIR_FPNEW}/fpu_div_sqrt_mvp/hdl
+                    ${DESIGN_RTL_DIR_FPNEW}/../vendor/openc910/C910_RTL_FACTORY/gen_rtl/vfdsu/rtl
+                    ${DESIGN_RTL_DIR_FPNEW}/../vendor/openc910/C910_RTL_FACTORY/gen_rtl/clk/rtl
+                    ${DESIGN_RTL_DIR_FPNEW}/../vendor/opene906/E906_RTL_FACTORY/gen_rtl/fdsu/rtl
+                    ${DESIGN_RTL_DIR_FPNEW}/../vendor/opene906/E906_RTL_FACTORY/gen_rtl/clk/rtl
+                    ${DESIGN_RTL_DIR_FPNEW}/../vendor/opene906/E906_RTL_FACTORY/gen_rtl/fpu/rtl
+                    )               
                    
                    
 set(FPU_SS_SOURCE   ${DESIGN_RTL_DIR_FPU_SS}/fpu_ss_pkg.sv                              #FPU_SS Sources
@@ -231,6 +241,7 @@ set(FPU_SS_INCLUDE  ${DESIGN_RTL_DIR_FPU_SS} )                                  
 set(ENV{VPROC_CONFIG} ${VPROC_CONFIG})
 set(ENV{VREG_W} ${VREG_W})
 set(ENV{VMEM_W} ${VMEM_W})
+set(ENV{VLANE_W} ${VLANE_W})
 execute_process(COMMAND rm -f vproc_config.sv
                 COMMAND make -f config.mk VPROC_CONFIG_PKG=vproc_config.sv
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Vicuna/vicuna_zve32f_zvhf)
