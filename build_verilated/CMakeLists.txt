@@ -41,6 +41,8 @@ set(VMEM_W 32 CACHE STRING "VMEM_W")
 set(VLANE_W 32 CACHE STRING "VLANE_W")
 set(DCACHE_LINE_W 128 CACHE STRING "DCACHE_LINE_W") 
 
+option(OLD_VICUNA "Return to Original Vicuna configuration with minimal timing anomalies" OFF)
+
 ##############
 # Configuration Selection
 ##############
@@ -249,7 +251,7 @@ execute_process(COMMAND rm -f vproc_config.sv
 
 
 if(TRACE)
-    add_definitions(-DTRACE_VCD)
+    add_definitions(-DTRACE_VCD) #This does nothing.  TODO: Confirm and remove.
     set(TRACE TRACE)
     
     if(TRACE_FULL)
@@ -260,8 +262,15 @@ if(TRACE)
 endif()
 
 
+if(OLD_VICUNA)
+    set(VICUNA_MODE -DOLD_VICUNA)
+endif()
+
+#Add this flag to detect if Vicuna is enabled to allow for correct selection of verilator header files in verilator_main.cpp
+add_definitions(${ARCH_VIC_FLAG})
+
 #Todo: allow user to set this
-#add_definitions(-DABORT_CYCLES=100000)  #Need to disable this for benchmarks, it triggers when clearing the tensor arenas
+#add_definitions(-DABORT_CYCLES=100000)  #Need to disable this for benchmarks, it triggers when clearing the tensor arenas.  Better way to detect stalls has been added, leaving this for future use
 
 #Create the verilated model 
 add_executable(verilated_model ${VICUNA_SIM_DIR}verilator_main.cpp)
@@ -285,11 +294,12 @@ verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${CV32E40X_SOU
 	                          --assert -DVPROC_SVA
                               -GMEM_W=${MEM_W} -GVMEM_W=${VMEM_W} -GICACHE_SZ=${ICACHE_SZ} -GICACHE_LINE_W=${ICACHE_LINE_W} -GDCACHE_SZ=${DCACHE_SZ} -GDCACHE_LINE_W=${DCACHE_LINE_W}
                               -DMAIN_CORE_CV32E40X #Flag to select CV32E40X as scalar core
+                              ${VICUNA_MODE}
                               ${ARCH_XIF_FLAG} #Each flag must be in a separate variable or they don't get passed correctly
                               ${ARCH_FPU_FLAG} 
                               ${ARCH_ZFH_FLAG} 
                               ${ARCH_VIC_FLAG}   
                               ${ARCH_VIC_F_FLAG} 
                               ${ARCH_VIC_FH_FLAG}                   
-                              -CFLAGS "-std=gnu++11 -O2")
+                              -CFLAGS "-std=gnu++11 -O2 -DUSE_VICUNA=ON")
 
