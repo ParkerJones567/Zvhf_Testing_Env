@@ -41,7 +41,9 @@ set(VMEM_W 32 CACHE STRING "VMEM_W")
 set(VLANE_W 32 CACHE STRING "VLANE_W")
 set(DCACHE_LINE_W 128 CACHE STRING "DCACHE_LINE_W") 
 
-option(OLD_VICUNA "Return to Original Vicuna configuration with minimal timing anomalies" OFF)
+# Experimental Features NOT STABLE
+option(OLD_VICUNA "Return to Original Vicuna configuration with minimal timing anomalies" ON)
+option(FORCE_ALIGNED_READS "Return to Original Vicuna configuration where all vector reads must be aligned with the VMEM Port" ON)
 
 ##############
 # Configuration Selection
@@ -266,6 +268,9 @@ if(OLD_VICUNA)
     set(VICUNA_MODE -DOLD_VICUNA)
 endif()
 
+if(FORCE_ALIGNED_READS)
+    set(READ_MODE -DFORCE_ALIGNED_READS)
+endif()
 #Add this flag to detect if Vicuna is enabled to allow for correct selection of verilator header files in verilator_main.cpp
 add_definitions(${ARCH_VIC_FLAG})
 
@@ -295,6 +300,7 @@ verilate(verilated_model SOURCES ${FPNEW_SOURCE} ${FPU_SS_SOURCE} ${CV32E40X_SOU
                               -GMEM_W=${MEM_W} -GVMEM_W=${VMEM_W} -GICACHE_SZ=${ICACHE_SZ} -GICACHE_LINE_W=${ICACHE_LINE_W} -GDCACHE_SZ=${DCACHE_SZ} -GDCACHE_LINE_W=${DCACHE_LINE_W}
                               -DMAIN_CORE_CV32E40X #Flag to select CV32E40X as scalar core
                               ${VICUNA_MODE}
+                              ${READ_MODE}
                               ${ARCH_XIF_FLAG} #Each flag must be in a separate variable or they don't get passed correctly
                               ${ARCH_FPU_FLAG} 
                               ${ARCH_ZFH_FLAG} 
