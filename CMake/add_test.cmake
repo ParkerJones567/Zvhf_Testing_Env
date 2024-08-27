@@ -241,7 +241,7 @@ macro(add_Benchmark_Vicuna TEST SOURCE_DIR TEST_BUILD_DIR)
 
 endmacro()
 
-macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR)
+macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR VLEN)
 
     set(TEST_NAME ${TEST}_Spike) #need to add a suffix, ctest doesnt allow 'test' as a test name
     
@@ -286,7 +286,7 @@ macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR)
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl512b_zvfh +signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt --signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt +signature-granularity=4 --signature-granularity=4 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
+             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl${VLEN}b_zvfh +signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt --signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt +signature-granularity=4 --signature-granularity=4 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")

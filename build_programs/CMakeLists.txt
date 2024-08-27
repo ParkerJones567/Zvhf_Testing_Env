@@ -16,6 +16,7 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x, rv32imfzve32f
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 set(MEM_LATENCY 1 CACHE STRING "Memory latency")
+set(MIN_VLEN 128 CACHE STRING "LLVM Autovectorizer parameter for minimum VLEN")
 
 option(SPIKE        "Run with Spike Baremetal"  OFF)
 option(SPIKE_PK     "Run with Spike and PK"     OFF)
@@ -40,7 +41,7 @@ set(SPIKE_SOURCES_TOP ${CMAKE_CURRENT_SOURCE_DIR}/../Spike)
 
 
 #####
-# Select RISCV_ARCH and RISCV_ABI based on selected features
+# Select RISCV_ARCH and RISCV_ABI and Autovectorization flags based on selected features
 #####
 
 #These control which unit tests are compiled based on selected RISCV_ARCH
@@ -49,6 +50,12 @@ option(USE_ZFH "Use the RISC-V ZFH Extension" OFF)
 option(USE_ZVE32X "Use the RISC-V Embedded V Extension" OFF)
 option(USE_ZVE32F "Use the RISC-V Embedded V Float Extension" OFF)
 option(USE_ZVHF "Use the RISC-V V Half Float Extension" OFF)
+
+
+set(AUTOVEC_FLAGS "")
+
+
+
 
 if(${RISCV_ARCH} STREQUAL "rv32im") 
     set(RISCV_ABI ilp32)  
@@ -65,17 +72,21 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzfh")
 elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x")
     set(RISCV_ABI ilp32) 
     set(USE_ZVE32X ON)
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_F ON)
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32f")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_ZVE32F ON)
     set(USE_F ON)
+    #set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
+    
 elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zvfh")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
@@ -83,6 +94,7 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zvfh")
     set(USE_ZFH ON)
     set(USE_F ON)
     set(USE_ZVFH ON)
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
 
 else()
@@ -136,12 +148,19 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -ggdb")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -ggdb")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wno-format -std=c11") 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+#set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3 -g -ggdb -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g -ggdb -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256")
+#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256")
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wno-format -std=c11 -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256") 
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=256")
+
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3 -g -ggdb ${AUTOVEC_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g -ggdb ${AUTOVEC_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 ${AUTOVEC_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 ${AUTOVEC_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wno-format -std=c11 ${AUTOVEC_FLAGS}") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 ${AUTOVEC_FLAGS}")
 
 
 #####################
