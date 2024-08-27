@@ -27,6 +27,8 @@ void benchmark_success();
 
 void benchmark_failure();
 
+void start_cycle_count();
+
 #ifdef __cplusplus
 }
 #endif

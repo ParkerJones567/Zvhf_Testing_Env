@@ -262,6 +262,7 @@ macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR)
         ${SOURCE_DIR}/${TEST}_data/${TEST}_model_settings.h
         ${SOURCE_DIR}/${TEST}_data/${TEST}_output_data_ref.cc
         ${SOURCE_DIR}/${TEST}_data/${TEST}_output_data_ref.h
+        ${SOURCE_DIR}/../../../Spike/sw/baremetal/spike_cycle_out.S
     )
 
     #Set Linker
@@ -272,7 +273,12 @@ macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR)
     target_link_options(${TEST_NAME} PRIVATE "-T${SPIKE_SOURCES_TOP}/sw/link.ld")
 
     #Link BSP
-    target_link_libraries(${TEST_NAME} PRIVATE Spike_Baremetal_Support tflm)   
+    target_link_libraries(${TEST_NAME} PRIVATE Spike_Baremetal_Support tflm)  
+    
+    #Need to redefine the symbol names so that spike can output them as a signature
+    add_custom_command(TARGET ${TEST_NAME}
+                       POST_BUILD
+                       COMMAND ${RISCV_LLVM_PREFIX}/llvm-objcopy --redefine-sym vdata_start=begin_signature --redefine-sym vdata_end=end_signature ${TEST_NAME}.elf ${TEST_NAME}.elf) 
     
     add_custom_command(TARGET ${TEST_NAME}
                        POST_BUILD
@@ -280,7 +286,7 @@ macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR)
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl128b_zvfh ${TEST_BUILD_DIR}/${TEST_NAME}.elf
+             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl512b_zvfh +signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt --signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt +signature-granularity=4 --signature-granularity=4 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")
