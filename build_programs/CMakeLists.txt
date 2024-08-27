@@ -85,7 +85,7 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32f")
     set(USE_ZVE32X ON)
     set(USE_ZVE32F ON)
     set(USE_F ON)
-    #set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zvfh")
     set(RISCV_ABI ilp32f) 
