@@ -1,19 +1,13 @@
-#include <cmath>
-#include <cstdarg>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #include "tensorflow/lite/micro/tflite_bridge/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
-#include "model_data/toycar_fp16_input_data.h"
-#include "model_data/toycar_fp16_model_data.h"
-#include "model_data/toycar_fp16_model_settings.h"
-#include "model_data/toycar_fp16_output_data_ref.h"
+#include "toycar_fp16_data/toycar_fp16_input_data.h"
+#include "toycar_fp16_data/toycar_fp16_model_data.h"
+#include "toycar_fp16_data/toycar_fp16_model_settings.h"
+#include "toycar_fp16_data/toycar_fp16_output_data_ref.h"
 
 extern "C" {
 #include "runtime.h"
@@ -21,19 +15,19 @@ extern "C" {
 #include "terminate_benchmark.h"
 }
 
-constexpr size_t tensor_arena_size = 256 * 1024 * 4; //x4 for float TODO: x2 for FP16
+constexpr size_t tensor_arena_size = 256 * 1024 * 4 + 25000; //x4 for float //TODO: WILL REDUCE BY 1/2 when actually using half float (+25000 for error caused by adding DEQUANTIZE OP)
 alignas(16) uint8_t tensor_arena[tensor_arena_size];
 
 int run_test()
 {
-    
-    tflite::MicroErrorReporter micro_error_reporter;
-    tflite::ErrorReporter *error_reporter = &micro_error_reporter;
+    //tflite::MicroErrorReporter micro_error_reporter;
+    //tflite::ErrorReporter *error_reporter = &micro_error_reporter;
 
     const tflite::Model *model = tflite::GetModel(toycar_fp16_model_data);
 
-    static tflite::MicroMutableOpResolver<1> resolver;
+    static tflite::MicroMutableOpResolver<2> resolver;
     resolver.AddFullyConnected();
+    resolver.AddDequantize();
 
     tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size);
 
@@ -45,7 +39,7 @@ int run_test()
 
     for (size_t i = 0; i < toycar_fp16_data_sample_cnt; i++)
     {
-        memcpy(interpreter.input(0)->data.f, (float *)toycar_fp16_input_data[i], toycar_fp16_input_data_len[i]);
+        memcpy(interpreter.input(0)->data.f, (float *)toycar_fp16_input_data[i], toycar_fp16_input_data_len[i] * 4); //Bytes to copy is 4*len
 
         if (interpreter.Invoke() != kTfLiteOk)
         {
@@ -53,24 +47,27 @@ int run_test()
             return -1;
         }
 
-        /*float sum = 0;
+        float sum = 0;
         for (size_t j = 0; j < toycar_fp16_input_data_len[i]; j++)
         {
             sum += pow((float)toycar_fp16_input_data[i][j] - interpreter.output(0)->data.f[j], 2);
         }
-        sum /= toycar_fp16_input_data_len[i];
+        sum /= (float)toycar_fp16_input_data_len[i];
 
-        float diff = abs(sum - toycar_fp16_output_data_ref[i]);
-        if (diff > 100.0)
+        float diff = sum - toycar_fp16_output_data_ref[i]; //TODO:abs() makes negative error 0.00?
+        if ((diff > 0.0001f) | (diff < -0.0001f))
         {
+            #if defined(PRINT_OUTPUTS)
             uart_printf("ERROR: at #%d, sum %f ref %f diff %f \n", i, sum, toycar_fp16_output_data_ref[i], diff);
+            #endif
             return -1;
         }
         else
         {
+            #if defined(PRINT_OUTPUTS)
             uart_printf("Sample #%d pass, sum %f ref %f diff %f \n", i, sum, toycar_fp16_output_data_ref[i], diff);
-            return 0;
-        }*/
+            #endif
+        }
     }
     
     return 0;
@@ -81,10 +78,16 @@ int main(int argc, char *argv[])
     int ret = run_test();
     if (ret != 0)
     {
+        #if defined(PRINT_OUTPUTS)
+        uart_printf("Test Failed!\n");
+        #endif 
         benchmark_failure();
     }
     else
     {
+        #if defined(PRINT_OUTPUTS)
+        uart_printf("Test Success!\n");
+        #endif
         benchmark_success(); 
     }
 

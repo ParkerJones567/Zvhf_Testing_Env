@@ -265,19 +265,29 @@ f.writelines("const float* toycar_fp32_input_data[] = {toycar_fp32_input_data_00
 f.writelines("const size_t toycar_fp32_input_data_len[] = {toycar_fp32_input_data_0000_len};\n")
 f.close()
 
+#####################
+# Create float input data for fp16
+#####################
 
+f = open("toycar_fp16_input_data_float.cc", "w")
+f.writelines("#include \"toycar_fp16_input_data.h\"\n")
+f.writelines("const float toycar_fp16_input_data_0000[] = {\n")
+for i in range(len(input_data[0][:])):
+    f.write(str(input_data[0][i])+", ")
+    if((i+1)%12 == 0):
+       f.write("\n")
+      
+f.writelines("};\n")
+f.writelines("const size_t toycar_fp16_input_data_0000_len = 640;\n")
 
-
-
-
-
- 
+f.writelines("const float* toycar_fp16_input_data[] = {toycar_fp16_input_data_0000};\n")
+f.writelines("const size_t toycar_fp16_input_data_len[] = {toycar_fp16_input_data_0000_len};\n")
+f.close()
 
 #####################
 #Test Int8 tflite model
 #####################
 
-#tflite_file = cwd + "/models/toycar_int8.tflite"
 tflite_file = cwd + "/models/toycar_int8.tflite"
 interpreter = tf.lite.Interpreter(model_path=tflite_file)
 
@@ -309,28 +319,82 @@ print("TFlite Int8 model Error: ")
 print(error)
 
 
-
-
-
-
-
 #####################
 # Create Input data for int8
 #####################
 
 f = open("toycar_int8_input_data.cc", "w")
 f.writelines("#include \"toycar_int8_input_data.h\"\n")
-f.writelines("const int8_t toycar_int8_input_data_0000[] = {\n")
+for j in range(2):
+    f.writelines("const int8_t toycar_int8_input_data_000"+str(j)+"[] = {\n")
+    for i in range(len(input_data[j][:])):
+        f.write(str(input_data[j][i])+", ")
+        if((i+1)%12 == 0):
+         f.write("\n")
+      
+    f.writelines("};\n")
+    f.writelines("const size_t toycar_int8_input_data_000"+str(j)+"_len = 640;\n\n")
+
+f.writelines("const int8_t* toycar_int8_input_data[] = {toycar_int8_input_data_0000, toycar_int8_input_data_0001};\n")
+f.writelines("const size_t toycar_int8_input_data_len[] = {toycar_int8_input_data_0000_len, toycar_int8_input_data_0001_len};\n")
+f.close()
+
+
+
+#####################
+#Test FP16 tflite model   NOTE: tflite does not support fp16 inputs/outputs, here using fp32 inputs/outputs and dequantizing to fp32 for intermediate calcs
+#####################
+
+tflite_file = cwd + "/models/toycar_fp16.tflite"
+interpreter = tf.lite.Interpreter(model_path=tflite_file)
+
+input_type = interpreter.get_input_details()[0]['dtype']
+input_type = interpreter.get_input_details()[0]['dtype']
+
+interpreter.allocate_tensors()
+
+## Predict Function
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+input_shape = input_details[0]['shape']
+
+input_data = np.array(data, dtype=np.float32) 
+output_data = np.empty_like(data, dtype=np.float32)
+
+#for i in range(input_data.shape[0]): #We only want one forward pass
+interpreter.set_tensor(input_details[0]['index'], input_data[0:1, :])
+interpreter.invoke()
+# The function `get_tensor()` returns a copy of the tensor data.
+# Use `tensor()` in order to get a pointer to the tensor.
+output_data[0:1, :] = interpreter.get_tensor(output_details[0]['index'])
+
+#### Predict function
+
+error = np.mean(np.square(data[0, :] - output_data[0,:]))
+print("TFlite FP16 model Error: ")
+print(error)
+
+#####################
+# Create Input data for FP16
+#####################
+
+#Convert to fp16 (cannot do this for testing as tflite expects fp32 inputs
+input_data = np.array(data, dtype=np.float16) 
+
+f = open("toycar_fp16_input_data.cc", "w")
+f.writelines("#include \"toycar_fp16_input_data.h\"\n")
+f.writelines("const _Float16 toycar_fp16_input_data_0000[] = {\n")
 for i in range(len(input_data[0][:])):
     f.write(str(input_data[0][i])+", ")
     if((i+1)%12 == 0):
        f.write("\n")
       
 f.writelines("};\n")
-f.writelines("const size_t toycar_int8_input_data_0000_len = 640;\n")
+f.writelines("const size_t toycar_fp16_input_data_0000_len = 640;\n")
 
-f.writelines("const int8_t* toycar_int8_input_data[] = {toycar_int8_input_data_0000};\n")
-f.writelines("const size_t toycar_int8_input_data_len[] = {toycar_int8_input_data_0000_len};\n")
+f.writelines("const _Float16* toycar_fp16_input_data[] = {toycar_fp16_input_data_0000};\n")
+f.writelines("const size_t toycar_fp16_input_data_len[] = {toycar_fp16_input_data_0000_len};\n")
 f.close()
 
 

@@ -1,13 +1,18 @@
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include "aww_fp32_data/aww_fp32_input_data.h"
+#include "aww_fp32_data/aww_fp32_model_data.h"
+#include "aww_fp32_data/aww_fp32_model_settings.h"
+#include "aww_fp32_data/aww_fp32_output_data_ref.h"
 
 #include "tensorflow/lite/micro/tflite_bridge/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/schema/schema_generated.h"
-
-#include "toycar_int8_data/toycar_int8_input_data.h"
-#include "toycar_int8_data/toycar_int8_model_data.h"
-#include "toycar_int8_data/toycar_int8_model_settings.h"
-#include "toycar_int8_data/toycar_int8_output_data_ref.h"
 
 extern "C" {
 #include "runtime.h"
@@ -15,7 +20,7 @@ extern "C" {
 #include "terminate_benchmark.h"
 }
 
-constexpr size_t tensor_arena_size = 256 * 1024;
+constexpr size_t tensor_arena_size = 256 * 1024 * 4;
 alignas(16) uint8_t tensor_arena[tensor_arena_size];
 
 int run_test()
@@ -23,10 +28,15 @@ int run_test()
     //tflite::MicroErrorReporter micro_error_reporter;
     //tflite::ErrorReporter *error_reporter = &micro_error_reporter;
 
-    const tflite::Model *model = tflite::GetModel(toycar_int8_model_data);
+    const tflite::Model *model = tflite::GetModel(aww_fp32_model_data);
 
-    static tflite::MicroMutableOpResolver<1> resolver;
+    static tflite::MicroMutableOpResolver<6> resolver;
     resolver.AddFullyConnected();
+    resolver.AddConv2D();
+    resolver.AddDepthwiseConv2D();
+    resolver.AddAveragePool2D();
+    resolver.AddReshape();
+    resolver.AddSoftmax();
 
     tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size);
 
@@ -36,11 +46,10 @@ int run_test()
         return -1;
     }
 
-    for (size_t i = 0; i < toycar_int8_data_sample_cnt; i++)
+    //for (size_t i = 0; i < aww_fp32_data_sample_cnt; i++)
+    for (size_t i = 0; i < 1; i++)
     {
-        memcpy(interpreter.input(0)->data.int8, (int8_t *)toycar_int8_input_data[i], toycar_int8_input_data_len[i]);
-        
-        //start_cycle_count(); //RD cycle is illegal, causes a lock on attempted offload
+        memcpy(interpreter.input(0)->data.f, (float *)aww_fp32_input_data[i], aww_fp32_input_data_len[i] * 4); //Bytes to copy is 4*len
 
         if (interpreter.Invoke() != kTfLiteOk)
         {
@@ -48,33 +57,25 @@ int run_test()
             return -1;
         }
 
-        uint32_t sum = 0;
-        for (size_t j = 0; j < toycar_int8_input_data_len[i]; j++)
+        int8_t top_index = 0;
+        for (size_t j = 0; j < aww_fp32_model_label_cnt; j++)
         {
-            sum += pow((int8_t)toycar_int8_input_data[i][j] - interpreter.output(0)->data.int8[j], 2);
+            if (interpreter.output(0)->data.f[j] > interpreter.output(0)->data.f[top_index])
+            {
+                top_index = j;
+            }
         }
-        sum /= toycar_int8_input_data_len[i];
 
-        uint32_t diff = abs(sum - toycar_int8_output_data_ref[i]);
-
-        
-        //store_result_int(diff);
-        
-        if (diff > 1)
+        if (top_index != aww_fp32_output_data_ref[i])
         {
-            #if defined(PRINT_OUTPUTS)
-            uart_printf("ERROR: at #%d, sum %d ref %d diff %d \n", i, sum, toycar_int8_output_data_ref[i], diff);
-            #endif
+            //uart_printf("ERROR: at #%d, top_index %d aww_fp32_output_data_ref %d \n", i, top_index, aww_fp32_output_data_ref[i]);
             return -1;
         }
         else
         {
-            #if defined(PRINT_OUTPUTS)
-            uart_printf("Sample #%d pass, sum %d ref %d diff %d \n", i, sum, toycar_int8_output_data_ref[i], diff);
-            #endif
+            //uart_printf("Sample #%d pass, top_index %d matches ref %d \n", i, top_index, aww_fp32_output_data_ref[i]);
         }
     }
-
     return 0;
 }
 

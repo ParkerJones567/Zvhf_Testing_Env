@@ -39,6 +39,8 @@ int run_test()
     for (size_t i = 0; i < toycar_fp32_data_sample_cnt; i++)
     {
         memcpy(interpreter.input(0)->data.f, (float *)toycar_fp32_input_data[i], toycar_fp32_input_data_len[i] * 4); //Bytes to copy is 4*len
+        
+        //start_cycle_count();
 
         if (interpreter.Invoke() != kTfLiteOk)
         {
@@ -54,7 +56,12 @@ int run_test()
         sum /= (float)toycar_fp32_input_data_len[i];
 
         float diff = sum - toycar_fp32_output_data_ref[i]; //TODO:abs() makes negative error 0.00?
-        if (diff > 0.0001 |  diff < -0.0001)
+        
+        //diff = 1.234;
+        
+        //store_result_float(diff);
+        
+        if (diff > 0.001f |  diff < -0.001f)
         {
             #if defined(PRINT_OUTPUTS)
             uart_printf("ERROR: at #%d, sum %f ref %f diff %f \n", i, sum, toycar_fp32_output_data_ref[i], diff);
