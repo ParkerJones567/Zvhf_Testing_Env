@@ -259,8 +259,6 @@ vdata_end:
     .global vref_start
     .global vref_end
 vref_start:
-    #.float           0x3f800000 #1.0
-    #.float           0x00000000
     
     .float           1.0
     .word            0x00000000

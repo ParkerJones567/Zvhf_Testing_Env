@@ -7,7 +7,7 @@
 
     # redirect all interrupts to the execption wrapper
     .rept 31
-    nop
+    j exc_wrapper
     .endr
     j exc_wrapper
 

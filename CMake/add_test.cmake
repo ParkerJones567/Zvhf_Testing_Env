@@ -61,7 +61,7 @@ macro(add_unit_test TEST_PATH_NAME TEST_SOURCE_PATH TEST_BUILD_PATH)
 
     #Add Test
     add_test(NAME ${TEST_NAME}
-             COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DVERILATED_DIR=${VERILATED_DIR} -DMEM_TRACE_ARGS=${MEM_TRACE_ARGS} -DMEM_LATENCY=${MEM_LATENCY} -DVCD_TRACE_ARGS=${VCD_TRACE_ARGS} -P ${CMAKE_TOP}/run_test.cmake
+             COMMAND cmake -DTEST_NAME=${TEST_NAME} -DBUILD_DIR=${TEST_BUILD_PATH} -DVERILATED_DIR=${VERILATED_DIR} -DMEM_TRACE_ARGS=${MEM_TRACE_ARGS} -DMEM_LATENCY=${MEM_LATENCY} -DMEM_W=${MEM_W} -DVCD_TRACE_ARGS=${VCD_TRACE_ARGS} -P ${CMAKE_TOP}/run_test.cmake
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")
@@ -170,7 +170,7 @@ macro(add_code_test_vicuna TEST SOURCE_DIR TEST_BUILD_DIR)
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ./${VERILATED_DIR}/verilated_model ${TEST_BUILD_DIR}/prog_${TEST_NAME}.txt 32 4194304 ${MEM_LATENCY} 1 ${MEM_TRACE_ARGS} ${VCD_TRACE_ARGS} #TODO: PASS THESE ARGUMENTS IN FROM USER
+             COMMAND ./${VERILATED_DIR}/verilated_model ${TEST_BUILD_DIR}/prog_${TEST_NAME}.txt ${MEM_W} 4194304 ${MEM_LATENCY} 1 ${MEM_TRACE_ARGS} ${VCD_TRACE_ARGS} #TODO: PASS THESE ARGUMENTS IN FROM USER
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")
@@ -198,6 +198,7 @@ macro(add_Benchmark_Vicuna TEST SOURCE_DIR TEST_BUILD_DIR)
         ${SOURCE_DIR}/${TEST}_data/${TEST}_model_settings.h
         ${SOURCE_DIR}/${TEST}_data/${TEST}_output_data_ref.cc
         ${SOURCE_DIR}/${TEST}_data/${TEST}_output_data_ref.h
+        ${SOURCE_DIR}/../../vicuna_sim_out.S
     )
 
     #Set Linker
@@ -216,13 +217,21 @@ macro(add_Benchmark_Vicuna TEST SOURCE_DIR TEST_BUILD_DIR)
                        COMMAND ${RISCV_LLVM_PREFIX}/llvm-objcopy -O binary ${TEST_NAME}.elf ${TEST_NAME}.bin #Needs to be parameterized in case GCC is used (just use objcopy variable?)
                        COMMAND srec_cat ${TEST_NAME}.bin -binary -offset 0x0000 -byte-swap 4 -o ${TEST_NAME}.vmem -vmem
                        COMMAND rm -f prog_${TEST_NAME}.txt
-                       COMMAND echo -n "${TEST_BUILD_DIR}/${TEST_NAME}.vmem" > prog_${TEST_NAME}.txt
+                       COMMAND echo -n "${TEST_BUILD_DIR}/${TEST_NAME}.vmem ${TEST_BUILD_DIR}/${TEST_NAME}_unused.txt " > prog_${TEST_NAME}.txt
+                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vref_start | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
+                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vref_end | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
+                       COMMAND echo -n "${TEST_BUILD_DIR}/${TEST_NAME}_vicuna_sim_out.txt " >> prog_${TEST_NAME}.txt
+                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vdata_start | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
+                       COMMAND readelf -s ${TEST_NAME}.elf | sed '2,13 s/ //1' | grep vdata_end | cut -d " " -f 6 | tr [=["\n"]=] " " >> prog_${TEST_NAME}.txt
                        COMMAND ${RISCV_LLVM_PREFIX}/llvm-objdump -D ${TEST_NAME}.elf > ${TEST_NAME}_dump.txt)
     
-    #VERY DANGEROUS TO USE TRACE                   
+    #VERY DANGEROUS TO USE TRACE
+    set(INST_TRACE_ARGS "${BUILD_DIR}/Testing/inst_trace.txt")
+
     if(TRACE)
         set(MEM_TRACE_ARGS "${BUILD_DIR}/Testing/last_test_mem.csv")
         set(VCD_TRACE_ARGS "${BUILD_DIR}/Testing/last_test_sig.vcd")
+
     else()
         set(MEM_TRACE_ARGS "")
         set(VCD_TRACE_ARGS "")
@@ -232,7 +241,7 @@ macro(add_Benchmark_Vicuna TEST SOURCE_DIR TEST_BUILD_DIR)
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ./${VERILATED_DIR}/verilated_model ${TEST_BUILD_DIR}/prog_${TEST_NAME}.txt 32 4194304 ${MEM_LATENCY} 1 ${MEM_TRACE_ARGS} ${VCD_TRACE_ARGS}  #TODO: PASS THESE ARGUMENTS IN FROM USER
+             COMMAND ./${VERILATED_DIR}/verilated_model ${TEST_BUILD_DIR}/prog_${TEST_NAME}.txt ${MEM_W} 4194304 ${MEM_LATENCY} 1 ${INST_TRACE_ARGS} ${MEM_TRACE_ARGS} ${VCD_TRACE_ARGS}  #TODO: PASS THESE ARGUMENTS IN FROM USER
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
              
     set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 0) #TODO: Find a reasonable timeout for these tests
@@ -286,7 +295,7 @@ macro(add_Benchmark_Spike TEST SOURCE_DIR TEST_BUILD_DIR VLEN)
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl${VLEN}b_zvfh +signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt --signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt +signature-granularity=4 --signature-granularity=4 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
+             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zfh_zve32f_zvfh_zvl${VLEN}b +signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt --signature=${TEST_BUILD_DIR}/${TEST_NAME}_inst_count.txt +signature-granularity=4 --signature-granularity=4 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")
@@ -295,7 +304,7 @@ endmacro()
 
 
 
-macro(add_Benchmark_Spike_PK TEST SOURCE_DIR TEST_BUILD_DIR)
+macro(add_Benchmark_Spike_PK TEST SOURCE_DIR TEST_BUILD_DIR VLEN)
 
     set(TEST_NAME ${TEST}_Spike_PK)
     
@@ -321,13 +330,14 @@ macro(add_Benchmark_Spike_PK TEST SOURCE_DIR TEST_BUILD_DIR)
     #Link BSP
     target_link_libraries(${TEST_NAME} PRIVATE tflm Spike_PK_Support)   
     
-    #add_custom_command(TARGET ${TEST_NAME}
-    #                  POST_BUILD
-    #                   COMMAND ${RISCV_LLVM_PREFIX}/llvm-objdump -D ${TEST_NAME}.elf > ${TEST_NAME}_dump.txt)     	              
+    add_custom_command(TARGET ${TEST_NAME}
+                      POST_BUILD
+                       COMMAND ${RISCV_GCC_PREFIX}/bin/riscv32-unknown-elf-objdump -D ${TEST_NAME}.elf > ${TEST_NAME}_dump.txt)     	              
 
     #Add Test
     add_test(NAME ${TEST_NAME} 
-             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl128b_zvfh ${SPIKE_SOURCES_TOP}/pk_ilp32 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
+             #COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zve32f_zvl${VLEN}b_zvfh_zfh ${SPIKE_SOURCES_TOP}/pk_ilp32 ${TEST_BUILD_DIR}/${TEST_NAME}.elf
+             COMMAND ${SPIKE_SOURCES_TOP}/spike --isa=rv32imf_zicntr_zihpm_zfh_zve32f_zvfh_zvl${VLEN}b ${SPIKE_SOURCES_TOP}/pk_ilp32d ${TEST_BUILD_DIR}/${TEST_NAME}.elf
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../..)
 
     message(STATUS "Successfully added ${TEST_NAME}")

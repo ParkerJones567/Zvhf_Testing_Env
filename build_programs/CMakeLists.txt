@@ -16,13 +16,15 @@ message(STATUS "CMake Version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CM
 #Set this on the command line to change configuration.  Currently Supported: rv32im, rv32imzve32x, rv32imf, rv32imfzve32x, rv32imfzve32f
 set(RISCV_ARCH rv32im CACHE STRING "Specify the configuration")
 set(MEM_LATENCY 1 CACHE STRING "Memory latency")
-set(MIN_VLEN 128 CACHE STRING "LLVM Autovectorizer parameter for minimum VLEN")
+set(MIN_VLEN 128 CACHE STRING "LLVM Autovectorizer parameter for minimum VLEN in bits")
+set(MEM_W 32 CACHE STRING "Width of main memory data port in bits")
 
-option(SPIKE        "Run with Spike Baremetal"  OFF)
-option(SPIKE_PK     "Run with Spike and PK"     OFF)
-option(TRACE        "Enable trace outputs"      OFF)
-option(BENCHMARKS   "Run Benchmarks"            ON)
-option(PRINT "Enable print statements"      OFF) #Turn off when caches enabled
+option(SPIKE        "Run with Spike Baremetal"                                     OFF)
+option(SPIKE_PK     "Run with Spike and PK"                                        OFF)
+option(TRACE        "Enable trace outputs"                                         OFF)
+option(BENCHMARKS   "Run Benchmarks"                                                ON)
+option(PRINT        "Enable print statements"                                      OFF) #Turn off when caches enabled
+option(FH_OPS      "Use FP16 for intermediate operations (no conversion to float)"  ON)
 
 set(TOOLCHAIN LLVM CACHE STRING "GCC OR LLVM")
 
@@ -53,7 +55,7 @@ option(USE_ZVHF "Use the RISC-V V Half Float Extension" OFF)
 
 
 set(AUTOVEC_FLAGS "")
-
+set(RISCV_ARCH_VL "") 
 
 
 
@@ -70,15 +72,17 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzfh")
     set(USE_ZFH ON)
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imzve32x")
+    #set(RISCV_ARCH_VL "_zvl${MIN_VLEN}b") 
     set(RISCV_ABI ilp32) 
     set(USE_ZVE32X ON)
-    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=on -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
+    #set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm --scalable-vectorization=preferred")
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32x")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_F ON)
-    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
+    set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm --scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
 elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32f")
     set(RISCV_ABI ilp32f) 
@@ -87,7 +91,7 @@ elseif(${RISCV_ARCH} STREQUAL "rv32imfzve32f")
     set(USE_F ON)
     set(AUTOVEC_FLAGS "-fvectorize -fslp-vectorize -mllvm -scalable-vectorization=preferred -mllvm --riscv-v-vector-bits-min=${MIN_VLEN}")
     
-elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zvfh")
+elseif(${RISCV_ARCH} STREQUAL "rv32imf_zfh_zve32f_zvfh")
     set(RISCV_ABI ilp32f) 
     set(USE_ZVE32X ON)
     set(USE_ZVE32F ON)
